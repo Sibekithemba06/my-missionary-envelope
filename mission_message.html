@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Mission Elder!</title>
+    <!-- Tailwind CSS CDN for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for special fonts: Dancing Script for the letter, Pacifico for "From a dear friend" -->
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Pacifico&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Variables for easy color management */
+        :root {
+            --envelope-blue: #4A90E2; /* A pleasant medium blue */
+            --envelope-inside-blue: #ADD8E6; /* Lighter blue for the inside of the envelope */
+            --text-color-dark: #333; /* Dark text for the letter */
+            --text-color-light: #fff; /* White text for "From a dear friend" */
+            --button-green: #4CAF50; /* Green for the button */
+            --button-green-hover: #45a049; /* Darker green on hover */
+            --flower-shadow: rgba(255, 255, 255, 0.5); /* Subtle shadow for flowers */
+            --body-bg: #FDF5E6; /* Light cream background for the page */
+        }
+
+        /* Base styles for the body */
+        body {
+            font-family: 'Inter', sans-serif; /* Default font */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            background-color: var(--body-bg); /* New background color */
+            overflow: hidden; /* Prevents scrollbars from flower animation */
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased; /* Smoother text rendering */
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Envelope Container - handles the "appear out of nowhere" animation */
+        .envelope-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            width: 100%;
+            max-width: 400px; /* Max width for desktop screens */
+            min-height: 300px; /* Ensures enough space for content */
+            border-radius: 15px;
+            padding: 20px;
+            /* Initial state: invisible and slightly scaled down/moved */
+            opacity: 0;
+            transform: translateY(50px) scale(0.8);
+            /* Transition for the appearance effect */
+            transition: opacity 1s ease-out, transform 1s ease-out;
+        }
+
+        /* Class added by JavaScript to make the envelope appear */
+        .envelope-container.appeared {
+            opacity: 1; /* Fully visible */
+            transform: translateY(0) scale(1); /* Original size and position */
+        }
+
+        /* Envelope Wrapper - holds all envelope parts and handles opening/closing */
+        .envelope-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 350px;
+            height: 200px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2); /* Soft shadow */
+            border-radius: 10px;
+            overflow: hidden; /* Ensures parts stay within boundaries */
+            transform-style: preserve-3d; /* Needed for 3D rotation of the flap */
+            transition: transform 0.8s ease-in-out;
+            background-color: var(--envelope-blue); /* The main blue color for the envelope */
+        }
+
+        /* Envelope Back */
+        .envelope-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: var(--envelope-blue);
+            border-radius: 10px;
+            z-index: 1; /* Lowest layer */
+        }
+
+        /* Envelope Front - where the letter sits */
+        .envelope-front {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--envelope-inside-blue); /* Lighter blue for the inside */
+            border-radius: 10px;
+            z-index: 2; /* Above the back, below the flap */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            flex-direction: column; /* To stack content vertically */
+            gap: 10px;
+        }
+
+        /* "From a dear friend" message styling - now always visible */
+        .message-from-friend {
+            font-family: 'Pacifico', cursive; /* Special handwritten-style font */
+            font-size: 1.8rem; /* Large size */
+            color: var(--text-color-light); /* White text color */
+            text-align: center;
+            position: absolute; /* Positioned relative to .envelope-wrapper */
+            top: 50%; /* Center vertically on the envelope */
+            left: 50%; /* Center horizontally on the envelope */
+            transform: translate(-50%, -50%); /* Adjust for perfect centering */
+            z-index: 5; /* Always on top of the flap, letter, etc. */
+            pointer-events: none; /* Make it unclickable */
+            padding: 0 10px; /* Some padding to prevent text from touching edges */
+        }
+
+        /* Envelope Top Flap - the triangular opening part */
+        .envelope-flap-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100px; /* Base height for the triangle */
+            background-color: var(--envelope-blue);
+            transform-origin: top center; /* Rotation point */
+            transition: transform 0.8s ease-in-out; /* Smooth rotation */
+            z-index: 4; /* On top of envelope parts when closed, behind message-from-friend */
+            clip-path: polygon(0% 0%, 100% 0%, 50% 100%); /* Creates the triangular shape */
+            border-radius: 10px 10px 0 0; /* Rounded top corners */
+        }
+
+        /* Styles when the envelope is 'open' */
+        .envelope-wrapper.open .envelope-flap-top {
+            transform: rotateX(180deg); /* Rotates the flap 180 degrees backwards */
+            z-index: 1; /* Moves behind the letter and front when open */
+        }
+
+        /* Letter styling */
+        .letter {
+            position: absolute;
+            width: 90%;
+            padding: 20px;
+            background-color: var(--text-color-light); /* White background for the letter */
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            font-size: 1.8rem; /* Larger font size */
+            font-family: 'Dancing Script', cursive; /* Special elegant font for the message */
+            color: var(--text-color-dark);
+            opacity: 0; /* Initially hidden */
+            transform: translateY(50px); /* Starts lower */
+            /* IMPORTANT CHANGE: Increased transition-delay significantly */
+            transition: opacity 0.6s ease-out 0.7s, transform 0.6s ease-out 0.7s; /* 0.7s delay */
+            z-index: 3; /* Above envelope-front, below flap when closed */
+            pointer-events: none; /* Allows clicks to pass through envelope */
+        }
+
+        /* Show letter when envelope is open */
+        .envelope-wrapper.open .letter {
+            opacity: 1; /* Fully visible */
+            transform: translateY(0); /* Moves to final position */
+            pointer-events: auto; /* Allow interaction with letter if needed */
+        }
+
+        /* Button styling */
+        .toggle-button {
+            margin-top: 30px;
+            padding: 12px 30px;
+            background-color: var(--button-green);
+            color: var(--text-color-light);
+            border: none;
+            border-radius: 25px; /* Fully rounded button */
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .toggle-button:hover {
+            background-color: var(--button-green-hover);
+            transform: translateY(-2px); /* Slight lift on hover */
+        }
+
+        .toggle-button:active {
+            transform: translateY(0); /* Press effect */
+        }
+
+        /* Flower animation styles */
+        .flower {
+            position: absolute;
+            font-size: 2.8rem; /* Large flowers */
+            opacity: 0;
+            transform: scale(0) rotate(0deg);
+            animation: pop-up 1s ease-out forwards; /* Animation name, duration, timing, fill mode */
+            pointer-events: none; /* Allows clicks to pass through elements below */
+            z-index: 6; /* Flowers are always on top */
+            text-shadow: 0 0 5px var(--flower-shadow); /* Subtle glow */
+        }
+
+        /* Keyframe animation for flowers */
+        @keyframes pop-up {
+            0% {
+                opacity: 0;
+                transform: scale(0) translateY(0px) rotate(0deg);
+            }
+            30% {
+                opacity: 1;
+                transform: scale(1.2) translateY(-30px) rotate(20deg); /* Pop up and rotate */
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.8) translateY(-100px) rotate(40deg); /* Fade out and move further up */
+            }
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 600px) {
+            .envelope-wrapper {
+                max-width: 300px;
+                height: 180px;
+            }
+            .envelope-flap-top {
+                height: 90px;
+            }
+            .letter {
+                font-size: 1.2rem;
+                padding: 15px;
+            }
+            .message-from-friend {
+                font-size: 1.5rem;
+            }
+            .toggle-button {
+                font-size: 1rem;
+                padding: 10px 20px;
+            }
+            .flower {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="envelope-container" id="envelopeContainer">
+        <div class="envelope-wrapper" id="envelopeWrapper">
+            <div class="envelope-back"></div>
+            <div class="envelope-front">
+                <!-- The letter that appears when opened -->
+                <div class="letter" id="letter">
+                    Happy Mission Elder!
+                </div>
+            </div>
+            <div class="envelope-flap-top"></div>
+            <!-- Message visible on the outside of the envelope, now always visible -->
+            <div class="message-from-friend" id="messageFromFriend">
+                From a dear friend
+            </div>
+        </div>
+        <button id="toggleButton" class="toggle-button rounded-full">Open Envelope</button>
+    </div>
+
+    <script>
+        // Get references to the HTML elements
+        const toggleButton = document.getElementById('toggleButton');
+        const envelopeWrapper = document.getElementById('envelopeWrapper');
+        const letter = document.getElementById('letter');
+        const messageFromFriend = document.getElementById('messageFromFriend');
+        const envelopeContainer = document.getElementById('envelopeContainer');
+
+        // Flags and variables for flower animation control
+        let isOpening = false;
+        let flowerBurstInterval = null;
+
+        // Function to create and animate a single flower
+        function createFlower() {
+            const flower = document.createElement('span');
+            flower.classList.add('flower');
+            const flowerEmojis = ['🌸', '🌼', '🌷', '🌺', '🌻', '💫', '✨'];
+            flower.textContent = flowerEmojis[Math.floor(Math.random() * flowerEmojis.length)];
+
+            const envelopeRect = envelopeWrapper.getBoundingClientRect();
+
+            const randomX = envelopeRect.left + (Math.random() * (envelopeRect.width - 60)) + 30;
+            const randomY = envelopeRect.top + (Math.random() * (envelopeRect.height - 60)) + 30;
+
+            flower.style.left = `${randomX}px`;
+            flower.style.top = `${randomY}px`;
+
+            document.body.appendChild(flower);
+
+            flower.addEventListener('animationend', () => {
+                flower.remove();
+            });
+        }
+
+        // Event listener for the "Open/Close Envelope" button
+        toggleButton.addEventListener('click', () => {
+            const isOpen = envelopeWrapper.classList.contains('open');
+
+            if (isOpen) {
+                // If envelope is currently open, close it
+                envelopeWrapper.classList.remove('open');
+                toggleButton.textContent = 'Open Envelope';
+                
+                isOpening = false;
+                if (flowerBurstInterval) {
+                    clearInterval(flowerBurstInterval);
+                }
+            } else {
+                // If envelope is currently closed, open it
+                envelopeWrapper.classList.add('open');
+                toggleButton.textContent = 'Close Envelope';
+                
+                if (!isOpening) {
+                    isOpening = true;
+                    let flowerCount = 0;
+                    const maxFlowers = 20;
+                    flowerBurstInterval = setInterval(() => {
+                        if (flowerCount < maxFlowers) {
+                            createFlower();
+                            flowerCount++;
+                        } else {
+                            clearInterval(flowerBurstInterval);
+                            isOpening = false;
+                        }
+                    }, 100);
+                }
+            }
+        });
+
+        // Initial animation for the envelope to appear "out of nowhere"
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                envelopeContainer.classList.add('appeared');
+            }, 500);
+        });
+    </script>
+</body>
+</html>
